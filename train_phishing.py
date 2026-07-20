@@ -7,22 +7,18 @@ from sklearn.pipeline import Pipeline
 from sklearn.metrics import classification_report, accuracy_score
 import joblib
 
-# Small sample dataset (replace/expand with real dataset like the "phishing dataset" from kaggle)
-data = [
-    ("Your account has been compromised. Click here to reset your password: http://evil.example", 1),
-    ("Please verify your account immediately by clicking the link below", 1),
-    ("Meeting notes for today's scrum attached. Let me know your thoughts.", 0),
-    ("Invoice for your recent purchase attached. Thank you for shopping with us", 0),
-    ("Urgent: Your mailbox is full. Update now to avoid suspension http://phish.example", 1),
-    ("Lunch tomorrow? 1 PM works for me.", 0),
-    ("You received a secure message from Bank. Please sign in: http://bank.example", 1),
-    ("Weekly report attached. Great job everyone!", 0)
-]
+# Load real dataset (82,487 emails from Kaggle: Enron, Ling, CEAS, Nazario, Nigerian, SpamAssassin)
+df = pd.read_csv("phishing_email.csv")
+df = df.dropna(subset=["text_combined", "label"])
+df = df.rename(columns={"text_combined": "text"})
 
-df = pd.DataFrame(data, columns=["text", "label"])
+print(f"Total samples: {len(df)}")
+print(df["label"].value_counts())
 
 # Split
-X_train, X_test, y_train, y_test = train_test_split(df["text"], df["label"], test_size=0.25, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(
+    df["text"], df["label"], test_size=0.2, random_state=42, stratify=df["label"]
+)
 
 # Pipeline: TF-IDF + Logistic Regression
 pipeline = Pipeline([
@@ -45,17 +41,3 @@ print(classification_report(y_test, preds))
 # Save model
 joblib.dump(pipeline, "phishing_model.joblib")
 print("Saved model to phishing_model.joblib")
-
-import numpy as np 
-import pandas as pd 
-# Input data files are available in the read-only "../input/" directory
-
-import os
-for dirname, _, filenames in os.walk('/kaggle/input'):
-    for filename in filenames:
-        print(os.path.join(dirname, filename))
-
-
-
-
-

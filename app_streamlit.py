@@ -16,4 +16,5 @@ if st.button("Classify"):
         pred = model.predict([text])[0]
         probs = model.predict_proba([text])[0]
         st.write("**Prediction:**", "PHISHING" if pred==1 else "SAFE")
-        st.write("**Probabilities:**", probs)
+        st.write(f"**Safe:** {probs[0]*100:.3f}%")
+        st.write(f"**Phishing:** {probs[1]*100:.3f}%")

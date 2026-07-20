@@ -1,57 +1,42 @@
 # AI Phishing Email Detector
 
-A machine learning-based phishing email detector using TF-IDF vectorization and Logistic Regression.
+A machine learning-based phishing email classifier trained on 82,000+ real emails.
 
-## Features
-- Train a custom phishing detection model
-- Command-line interface for quick email classification
-- Optional Streamlit web UI
-- High accuracy detection using NLP techniques
+## Overview
+This project uses TF-IDF vectorization + Logistic Regression to classify emails as phishing or safe. Trained on a combined dataset of Enron, Ling, CEAS, Nazario, Nigerian Fraud, and SpamAssassin email corpora.
 
-## Installation
+## Results
+- **Dataset size:** 82,486 emails
+- **Test accuracy:** 98.2%
+- **Precision/Recall/F1:** 0.98 across both classes
 
-1. Clone the repository:
+## Files
+- `train_phishing.py` — trains the model on `phishing_email.csv`
+- `classify_email.py` — CLI tool to classify a single email
+- `app_streamlit.py` — Streamlit web demo
+- `phishing_model.joblib` — trained model (generated after running train_phishing.py, not included in repo)
+
+## Setup
 ```bash
-git clone https://github.com/abhi050206/ai-phishing-detector.git
-cd ai-phishing-detector
+pip install pandas scikit-learn joblib streamlit
 ```
 
-2. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
+Download the dataset from Kaggle: [Phishing Email Dataset](https://www.kaggle.com/datasets/naserabdullahalam/phishing-email-dataset)
+Place `phishing_email.csv` in the project directory.
 
 ## Usage
 
-### Train the Model
+Train the model:
 ```bash
-python train_phishing.py
+python3 train_phishing.py
 ```
 
-### Classify Emails (CLI)
+Classify an email via CLI:
 ```bash
-python classify_email.py -t "Your suspicious email text here"
+python3 classify_email.py -t "Your email text here"
 ```
 
-### Run Web Interface (Optional)
+Run the web demo:
 ```bash
 streamlit run app_streamlit.py
 ```
-
-## Project Structure
-```
-.
-├── train_phishing.py      # Model training script
-├── classify_email.py      # CLI classification tool
-├── app_streamlit.py       # Web UI (optional)
-├── requirements.txt       # Python dependencies
-└── README.md             # Project documentation
-```
-
-## Model Details
-- **Algorithm**: Logistic Regression
-- **Vectorization**: TF-IDF (1-3 grams)
-- **Features**: 8000 max features
-
-## License
-MIT License
