@@ -3,6 +3,7 @@ import joblib
 import sys
 import os
 import argparse
+from feature_utils import extract_numeric_features
 
 MODEL_PATH = "phishing_model.joblib"
 

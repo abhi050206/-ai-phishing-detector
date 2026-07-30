@@ -1,5 +1,6 @@
 import streamlit as st
 import joblib
+from feature_utils import extract_numeric_features
 import os
 
 MODEL_PATH = "phishing_model.joblib"
