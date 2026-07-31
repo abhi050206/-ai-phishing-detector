@@ -2,10 +2,18 @@
 import joblib
 import sys
 import os
+import re
 import argparse
 from feature_utils import extract_numeric_features
 
 MODEL_PATH = "phishing_model.joblib"
+
+URGENCY_WORDS = ["urgent", "immediately", "verify your account", "suspended", "act now",
+                  "limited time", "click here", "confirm your identity", "unusual activity",
+                  "your account will be", "final notice"]
+
+URL_PATTERN = re.compile(r'https?://[^\s]+')
+SHORTENER_DOMAINS = ["bit.ly", "tinyurl.com", "t.co", "goo.gl", "ow.ly", "is.gd", "buff.ly"]
 
 def load_model(path=MODEL_PATH):
     if not os.path.exists(path):
@@ -25,6 +33,34 @@ def classify_text(text, model):
 
 def pretty_label(label):
     return "PHISHING" if label == 1 else "SAFE"
+
+def analyze_reasons(text):
+    reasons = []
+    lower_text = text.lower()
+
+    urls = URL_PATTERN.findall(text)
+    if len(urls) >= 1:
+        reasons.append(f"Contains {len(urls)} URL(s)")
+
+    shortened = [u for u in urls if any(domain in u for domain in SHORTENER_DOMAINS)]
+    if shortened:
+        reasons.append(f"Contains {len(shortened)} shortened URL(s) — common phishing evasion tactic")
+
+    matched_urgency = [w for w in URGENCY_WORDS if w in lower_text]
+    if matched_urgency:
+        reasons.append(f"Urgency/pressure language detected: {', '.join(matched_urgency[:3])}")
+
+    if "verify" in lower_text and "account" in lower_text:
+        reasons.append("Contains 'verify account' pattern — common credential-harvesting phrase")
+
+    if re.search(r'\$\d+|\bwon\b|\bprize\b|\breward\b', lower_text):
+        reasons.append("Contains money/prize-related language")
+
+    exclaim_count = text.count("!")
+    if exclaim_count >= 2:
+        reasons.append(f"Excessive punctuation ({exclaim_count} exclamation marks) — common in spam/phishing")
+
+    return reasons
 
 def main():
     parser = argparse.ArgumentParser(description="Classify an email as phishing or safe.")
@@ -52,6 +88,14 @@ def main():
 
     if confidence < 60:
         print("Note: Low confidence prediction — treat this result with caution.")
+
+    reasons = analyze_reasons(email)
+    if reasons:
+        print("\nReasons flagged:")
+        for r in reasons:
+            print(f"  - {r}")
+    elif label == 1:
+        print("\nReasons flagged: Model detected phishing patterns not captured by heuristic checks (based on learned word patterns from training data).")
 
 if __name__ == "__main__":
     main()
