@@ -1,5 +1,6 @@
 import streamlit as st
 import joblib
+import re
 from feature_utils import extract_numeric_features
 import os
 
@@ -15,8 +16,42 @@ def load_model():
         return None
 
 st.title("Phishing Email Detector (Demo)")
-
 model = load_model()
+
+URGENCY_WORDS = ["urgent", "immediately", "verify your account", "suspended", "act now",
+                  "limited time", "click here", "confirm your identity", "unusual activity",
+                  "your account will be", "final notice"]
+
+URL_PATTERN = re.compile(r'https?://[^\s]+')
+SHORTENER_DOMAINS = ["bit.ly", "tinyurl.com", "t.co", "goo.gl", "ow.ly", "is.gd", "buff.ly"]
+
+def analyze_reasons(text):
+    reasons = []
+    lower_text = text.lower()
+
+    urls = URL_PATTERN.findall(text)
+    if len(urls) >= 1:
+        reasons.append(f"Contains {len(urls)} URL(s)")
+
+    shortened = [u for u in urls if any(domain in u for domain in SHORTENER_DOMAINS)]
+    if shortened:
+        reasons.append(f"Contains {len(shortened)} shortened URL(s) — common phishing evasion tactic")
+
+    matched_urgency = [w for w in URGENCY_WORDS if w in lower_text]
+    if matched_urgency:
+        reasons.append(f"Urgency/pressure language detected: {', '.join(matched_urgency[:3])}")
+
+    if "verify" in lower_text and "account" in lower_text:
+        reasons.append("Contains 'verify account' pattern — common credential-harvesting phrase")
+
+    if re.search(r'\$\d+|\bwon\b|\bprize\b|\breward\b', lower_text):
+        reasons.append("Contains money/prize-related language")
+
+    exclaim_count = text.count("!")
+    if exclaim_count >= 2:
+        reasons.append(f"Excessive punctuation ({exclaim_count} exclamation marks) — common in spam/phishing")
+
+    return reasons
 
 if model is None:
     st.error("Model file not found. Please run train_phishing.py first to generate phishing_model.joblib.")
@@ -37,3 +72,11 @@ else:
 
             if confidence < 60:
                 st.info("Low confidence prediction — treat this result with caution.")
+
+            reasons = analyze_reasons(cleaned)
+            if reasons:
+                st.write("**Reasons flagged:**")
+                for r in reasons:
+                    st.write(f"- {r}")
+            elif pred == 1:
+                st.write("**Reasons flagged:** Model detected phishing patterns not captured by heuristic checks (based on learned word patterns from training data).")
